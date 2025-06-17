@@ -1,0 +1,5 @@
+~$*.xlsx
+*.pyc
+__pycache__/
+logs.txt
+equipos.xlsx

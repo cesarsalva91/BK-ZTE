@@ -1,24 +1,39 @@
-import json
+import pandas as pd
 
-RUTA_JSON = "equipos.json"
+ARCHIVO_EQUIPOS_XLSX = "equipos.xlsx"
 
-def cargar_equipos():
+def cargar_equipos_desde_excel():
     try:
-        with open(RUTA_JSON, "r", encoding="utf-8") as f:
-            return json.load(f)
+        # Cargar archivo Excel
+        dataframe = pd.read_excel(ARCHIVO_EQUIPOS_XLSX)
+
+        # Definir columnas obligatorias (tal como están en el Excel)
+        columnas_requeridas = {"NOMBRE", "MARCA", "IP", "USUARIO", "CONTRASEÑA", "ID"}
+        columnas_en_archivo = set(dataframe.columns)
+
+        # Validar existencia de todas las columnas
+        if not columnas_requeridas.issubset(columnas_en_archivo):
+            columnas_faltantes = columnas_requeridas - columnas_en_archivo
+            raise ValueError(f"[X] Faltan columnas requeridas en el archivo Excel: {columnas_faltantes}")
+
+        # Convertir cada fila en un diccionario compatible con el sistema
+        equipos = []
+        for _, fila in dataframe.iterrows():
+            equipo = {
+                "nombre": fila["NOMBRE"],
+                "marca": fila["MARCA"],
+                "ip": fila["IP"],
+                "usuario": fila["USUARIO"],
+                "contrasena": fila["CONTRASEÑA"],
+                "id": fila["ID"]
+            }
+            equipos.append(equipo)
+
+        return equipos
+
     except FileNotFoundError:
+        print(f"[X] No se encontró el archivo: {ARCHIVO_EQUIPOS_XLSX}")
         return []
-
-def guardar_equipos(equipos):
-    with open(RUTA_JSON, "w", encoding="utf-8") as f:
-        json.dump(equipos, f, indent=4)
-
-def agregar_equipo(marca, ip, usuario, contrasena):
-    equipos = cargar_equipos()
-    equipos.append({
-        "marca": marca,
-        "ip": ip,
-        "usuario": usuario,
-        "contrasena": contrasena
-    })
-    guardar_equipos(equipos)
+    except Exception as error:
+        print(f"[X] Error al procesar el archivo Excel: {error}")
+        return []

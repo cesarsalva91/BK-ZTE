@@ -14,9 +14,10 @@ def verificar_ping_desde_equipo(shell, ip_destino):
     time.sleep(3)
     return esperar_y_leer(shell, 1)
 
-def hacer_backup_zte(nombre, ip, usuario, contrasena):
+def hacer_backup_zte(nombre, ip, usuario, contrasena, identificador):
     fecha = datetime.now().strftime("%d-%m-%y")
-    nombre_archivo = f"{nombre}_{fecha}.dat"
+    id_sanitizado = identificador.replace(" ", "_")
+    nombre_archivo = f"{id_sanitizado}_{fecha}.dat"
     comandos = [
         "config tffs",
         "cd cfg",
@@ -77,10 +78,10 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
             primer_renglon = output.strip().split('\n')[0] if output else "Sin respuesta"
             registrar_log(ip, f"{nombre}: Comando: {cmd} | Salida: {primer_renglon}")
 
-            if cmd.startswith("tftp"):
+            if "tftp" in cmd:
                 print(f"[DEBUG] Salida completa del comando TFTP en {nombre}:\n{output.strip()}")
 
-                if "error" in output.lower() or "timeout" in output.lower():
+                if any(x in output.lower() for x in ["error", "timeout", "parameter too much"]):
                     print(f"[X] Error al guardar el backup de {nombre} ({ip})")
                     registrar_log(ip, f"{nombre}: Falla en transferencia TFTP", nivel="ERROR")
                 elif ".dat" in output or "completed" in output.lower():
