@@ -1,0 +1,23 @@
+[
+    {
+        "nombre": "mollar",
+        "marca": "ZTE",
+        "ip": "10.55.0.33",
+        "usuario": "Strong",
+        "contrasena": "41e62TRuj9"
+    },
+    {
+        "nombre": "las_moras",
+        "marca": "ZTE",
+        "ip": "10.50.19.6",
+        "usuario": "Strong",
+        "contrasena": "41e62TRuj9"
+    },
+    {
+        "nombre": "talapampa",
+        "marca": "ZTE",
+        "ip": "10.50.19.3",
+        "usuario": "Strong",
+        "contrasena": "41e62TRuj9"
+    }
+]

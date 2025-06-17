@@ -1,0 +1,13 @@
+[2025-06-11 16:58:47] [INFO] [10.55.0.33] Conexión SSH exitosa (switch_mollar)
+[2025-06-11 16:58:52] [INFO] [10.55.0.33] Autenticado en modo enable (switch_mollar)
+[2025-06-11 16:58:56] [INFO] [10.55.0.33] switch_mollar tiene conectividad hacia el servidor TFTP 10.243.0.220
+[2025-06-11 16:58:58] [INFO] [10.55.0.33] switch_mollar: Comando: config tffs | Salida: config tffs
+[2025-06-11 16:59:00] [INFO] [10.55.0.33] switch_mollar: Comando: cd cfg | Salida: cd cfg
+[2025-06-11 16:59:05] [INFO] [10.55.0.33] switch_mollar: Comando: tftp 10.243.0.220 upload startrun.dat /zte/switch_mollar_11-06-25.dat | Salida: tftp 10.243.0.220 upload startrun.dat /zte/switch_mollar_                                                         $3.0.220 upload startrun.dat /zte/switch_mollar_1         11-06-25.                                                         $load startrun.dat /zte/switch_mollar_11-06-25.d          dat
+[2025-06-11 16:59:05] [INFO] [10.55.0.33] Backup guardado como switch_mollar_11-06-25.dat
+[2025-06-11 16:59:12] [INFO] [10.50.19.6] Conexión SSH exitosa (switch_las_moras)
+[2025-06-11 16:59:17] [INFO] [10.50.19.6] Autenticado en modo enable (switch_las_moras)
+[2025-06-11 16:59:21] [ERROR] [10.50.19.6] switch_las_moras no puede alcanzar el servidor TFTP 10.243.0.220 tras enable
+[2025-06-11 16:59:27] [INFO] [10.50.19.3] Conexión SSH exitosa (switch_talapampa)
+[2025-06-11 16:59:33] [INFO] [10.50.19.3] Autenticado en modo enable (switch_talapampa)
+[2025-06-11 16:59:37] [ERROR] [10.50.19.3] switch_talapampa no puede alcanzar el servidor TFTP 10.243.0.220 tras enable
