@@ -9,6 +9,5 @@ for equipo in equipos:
             nombre=equipo["nombre"],
             ip=equipo["ip"],
             usuario=equipo["usuario"],
-            contrasena=equipo["contrasena"],
-            identificador=equipo["id"]
+            contrasena=equipo["contrasena"]
         )
