@@ -56,18 +56,36 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
         else:
             registrar_log(ip, f"No se solicitó contraseña de enable ({nombre})", nivel="WARNING")
 
+        # Obtener nombre real del equipo desde running-config
+        shell.send("show running-config\n")
+        output_sys = esperar_y_leer(shell, 2)
+        nombre_equipo = "NO_DETECTADO"
+
+        for line in output_sys.splitlines():
+            if line.strip().lower().startswith("hostname"):
+                nombre_equipo = line.split()[-1].strip()
+                break
+
+        print(f"[INFO] Nombre real detectado: {nombre_equipo}")
+        registrar_log(ip, f"Nombre real detectado desde el equipo: {nombre_equipo}")
+
         # Verificación de conectividad hacia el servidor TFTP
-        print(f"[*] Verificando conectividad desde {nombre} hacia 10.243.0.220...")
+        print(f"[*] Verificando conectividad desde {nombre_equipo} hacia 10.243.0.220...")
         ping_output = verificar_ping_desde_equipo(shell, "10.243.0.220")
         if not any(p in ping_output for p in ["Reply from", "bytes from", "!"]):
-            print(f"[X] {nombre} no puede alcanzar al servidor TFTP (10.243.0.220). Backup omitido.")
-            registrar_log(ip, f"{nombre} no puede alcanzar el servidor TFTP 10.243.0.220 tras enable", nivel="ERROR")
+            
+            log=(f"[X] {nombre_equipo} no puede alcanzar al servidor TFTP (10.243.0.220). Backup omitido."
+            "\n***************************************************************\n"
+            )
+            
+            print(log)
+            registrar_log(ip, log, nivel="ERROR")
             shell.close()
             ssh.close()
             return
         else:
-            print(f"[OK] {nombre} tiene conectividad con el servidor TFTP.")
-            registrar_log(ip, f"{nombre} tiene conectividad hacia el servidor TFTP 10.243.0.220")
+            print(f"[OK] {nombre_equipo} tiene conectividad con el servidor TFTP.")
+            registrar_log(ip, f"{nombre_equipo} tiene conectividad hacia el servidor TFTP 10.243.0.220")
 
         # Ejecutar comandos
         for cmd in comandos:
@@ -76,21 +94,29 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
             output = esperar_y_leer(shell, espera)
 
             primer_renglon = output.strip().split('\n')[0] if output else "Sin respuesta"
-            registrar_log(ip, f"{nombre}: Comando: {cmd} | Salida: {primer_renglon}")
+            registrar_log(ip, f"{nombre_equipo}: Comando: {cmd} | Salida: {primer_renglon}")
 
             if "tftp" in cmd:
-                print(f"[DEBUG] Salida completa del comando TFTP en {nombre}:\n{output.strip()}")
+                print(f"[DEBUG] Salida completa del comando TFTP en {nombre_equipo}")
 
                 errores_detectados = ["error", "timeout", "parameter too much", "command not found"]
                 if any(err in output.lower() for err in errores_detectados):
-                    print(f"[X] Error al guardar el backup de {nombre} ({ip})")
-                    registrar_log(ip, f"{nombre}: Falla en transferencia TFTP", nivel="ERROR")
+                    log=(f"[X] Error al guardar el backup de {nombre_equipo} ({ip})"
+                    "\n***************************************************************\n"
+                    )
+                    
+                    print(log)
+                    registrar_log(ip, log, nivel="ERROR")
                 elif ".dat" in output or "completed" in output.lower():
-                    print(f"[OK] Backup guardado correctamente: {nombre_archivo} ({ip})")
-                    registrar_log(ip, f"Backup guardado como {nombre_archivo}")
+                    log=(f"[OK] Backup guardado correctamente: {nombre_archivo} ({ip})"
+                    "\n***************************************************************\n"
+                    )
+                    
+                    print(log)
+                    registrar_log(ip, log)
                 else:
-                    print(f"[!] Resultado incierto para {nombre} ({ip}) → {output.strip()[:80]}")
-                    registrar_log(ip, f"{nombre}: Respuesta TFTP incierta", nivel="WARNING")
+                    print(f"[!] Resultado incierto para {nombre_equipo} ({ip}) -> {output.strip()[:80]}")
+                    registrar_log(ip, f"{nombre_equipo}: Respuesta TFTP incierta", nivel="WARNING")
 
         shell.close()
         ssh.close()
@@ -98,3 +124,5 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
     except Exception as e:
         registrar_log(ip, f"{nombre}: Error durante el backup: {e}", nivel="ERROR")
         print(f"[X] Error inesperado en {nombre} ({ip}): {e}")
+        
+        print("\n***************************************************************\n")
