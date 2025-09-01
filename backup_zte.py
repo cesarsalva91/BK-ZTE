@@ -15,13 +15,13 @@ def verificar_ping_desde_equipo(shell, ip_destino):
     return esperar_y_leer(shell, 1)
 
 def hacer_backup_zte(nombre, ip, usuario, contrasena):
-    fecha = datetime.now().strftime("%d-%m-%y")
+    fecha = datetime.now().strftime("%d-%m-%y_%H:%M:%S")
     id_sanitizado = nombre.replace(" ", "_")
     nombre_archivo = f"{id_sanitizado}_{fecha}.dat"
     comandos = [
         "config tffs",
         "cd cfg",
-        f"tftp 10.243.0.220 upload startrun.dat /zte/{nombre_archivo}"
+        f"tftp 10.243.0.220 upload startrun.dat {nombre_archivo}"
     ]
 
     try:
