@@ -1,13 +1,39 @@
-from dispositivos import cargar_equipos_desde_excel
 from backup_zte import hacer_backup_zte
+from equipos_json import (
+    crear_json_desde_excel,
+    cargar_equipos_desde_json,
+    eliminar_equipo_de_json
+)
 
-equipos = cargar_equipos_desde_excel()
+MAX_INTENTOS = 3
 
-for equipo in equipos:
-    if equipo["marca"].upper() == "ZTE":
-        hacer_backup_zte(
-            nombre=equipo["nombre"],
-            ip=equipo["ip"],
-            usuario=equipo["usuario"],
-            contrasena=equipo["contrasena"]
-        )
+def ejecutar_backups():
+    for intento in range(1, MAX_INTENTOS + 1):
+        print(f"\n===== EJECUCION #{intento} =====")
+        equipos = cargar_equipos_desde_json()
+        
+        if not equipos:
+            print(" Todos los backups se completaron con éxito.")
+            return
+
+        for equipo in equipos[:]:  # [:] para trabajar sobre una copia
+            if equipo["marca"].upper() == "ZTE":
+                exito = hacer_backup_zte(
+                    nombre=equipo["nombre"],
+                    ip=equipo["ip"],
+                    usuario=equipo["usuario"],
+                    contrasena=equipo["contrasena"]
+                )
+                if exito is True:
+                    eliminar_equipo_de_json(equipo["nombre"])
+
+    # Si después de los intentos aún quedan equipos
+    equipos_restantes = cargar_equipos_desde_json()
+    if equipos_restantes:
+        print("\n Los siguientes equipos no pudieron realizar backup:")
+        for eq in equipos_restantes:
+            print(f" - {eq['nombre']} ({eq['ip']})")
+
+if __name__ == "__main__":
+    crear_json_desde_excel()  # JSON inicial solo si no existe
+    ejecutar_backups()
