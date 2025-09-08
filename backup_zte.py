@@ -1,21 +1,34 @@
 import paramiko
 import time
+import re
 from datetime import datetime
 from logger import registrar_log
 
-def esperar_y_leer(shell, espera=2):
+def esperar_y_leer(shell, espera=2, cmd=None):
     time.sleep(espera)
     if shell.recv_ready():
-        return shell.recv(65535).decode('utf-8', errors='ignore')
+        raw_output = shell.recv(65535).decode('utf-8', errors='ignore')
+
+        # 🔹 Eliminar caracteres de control (backspace, tabs, etc.)
+        limpio = re.sub(r'[\x00-\x1F\x7F]', '', raw_output)
+
+        # 🔹 Si se pasa el comando, eliminarlo de la salida
+        if cmd:
+            limpio = limpio.replace(cmd, '')
+
+        # 🔹 Normalizar espacios múltiples
+        limpio = re.sub(r'\s+', ' ', limpio)
+
+        return limpio.strip()
     return ""
 
 def verificar_ping_desde_equipo(shell, ip_destino):
     shell.send(f"ping {ip_destino}\n")
     time.sleep(3)
-    return esperar_y_leer(shell, 1)
+    return esperar_y_leer(shell, 1, cmd=f"ping {ip_destino}")
 
 def hacer_backup_zte(nombre, ip, usuario, contrasena):
-    fecha = datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+    fecha = datetime.now().strftime("%d-%m-%y_%H:%M:%S")
     id_sanitizado = nombre.replace(" ", "_")
     nombre_archivo = f"{id_sanitizado}_{fecha}.dat"
     comandos = [
@@ -42,7 +55,7 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
 
         # Autenticación enable
         shell.send("enable\n")
-        output = esperar_y_leer(shell, 1)
+        output = esperar_y_leer(shell, 1, cmd="enable")
 
         if "Password" in output or "password" in output:
             shell.send(contrasena + "\n")
@@ -58,13 +71,17 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
 
         # Obtener nombre real del equipo
         shell.send("show running-config\n")
-        output_sys = esperar_y_leer(shell, 2)
-        nombre_equipo = "NO_DETECTADO"
+        output_sys = esperar_y_leer(shell, 2, cmd="show running-config")
 
+        nombre_equipo = "NO_DETECTADO"
         for line in output_sys.splitlines():
-            if line.strip().lower().startswith("hostname"):
-                nombre_equipo = line.split()[-1].strip()
-                break
+            if "hostname" in line.strip().lower():
+                partes = line.strip().split()
+                idx = [i for i, p in enumerate(partes) if p.lower() == "hostname"]
+                if idx:
+                    nombre_equipo = partes[idx[0] + 1].strip()
+                    break
+
 
         print(f"[INFO] Nombre real detectado: {nombre_equipo}")
         registrar_log(ip, f"Nombre real detectado desde el equipo: {nombre_equipo}")
@@ -88,10 +105,11 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
         for cmd in comandos:
             shell.send(cmd + "\n")
             espera = 5 if "tftp" in cmd else 2
-            output = esperar_y_leer(shell, espera)
+            output = esperar_y_leer(shell, espera, cmd)
 
-            primer_renglon = output.strip().split('\n')[0] if output else "Sin respuesta"
-            registrar_log(ip, f"{nombre_equipo}: Comando: {cmd} | Salida: {primer_renglon}")
+            primer_renglon = output.split('\n')[0] if output else "Sin respuesta"
+            log_cmd = f"{nombre_equipo}: Comando: {cmd} | Salida: {primer_renglon}"
+            registrar_log(ip, log_cmd)
 
             if "tftp" in cmd:
                 print(f"[DEBUG] Salida completa del comando TFTP en {nombre_equipo}")
@@ -105,7 +123,8 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
                     shell.close()
                     ssh.close()
                     return False
-                elif ".dat" in output or "completed" in output.lower():
+
+                elif "bytes uploaded" in output.lower():
                     log = (f"[OK] Backup guardado correctamente: {nombre_archivo} ({ip})"
                            "\n***************************************************************\n")
                     print(log)
@@ -113,16 +132,20 @@ def hacer_backup_zte(nombre, ip, usuario, contrasena):
                     shell.close()
                     ssh.close()
                     return True
+
                 else:
-                    print(f"[!] Resultado incierto para {nombre_equipo} ({ip}) -> {output.strip()[:80]}")
-                    registrar_log(ip, f"{nombre_equipo}: Respuesta TFTP incierta", nivel="WARNING")
+                    log = (f"[!] Resultado incierto para {nombre_equipo} ({ip}) -> {output[:80]}"
+                           "\n***************************************************************\n")
+                    print(log)
+                    registrar_log(ip, log, nivel="WARNING")
                     shell.close()
                     ssh.close()
                     return False
 
     except Exception as e:
-        registrar_log(ip, f"{nombre}: Error durante el backup: {e}", nivel="ERROR")
-        print(f"[X] Error inesperado en {nombre} ({ip}): {e}")
-        print("\n***************************************************************\n")
+        log = (f"[X] Error inesperado en {nombre} ({ip}): {e}"
+               "\n***************************************************************\n")
+        print(log)
+        registrar_log(ip, log, nivel="ERROR")
         return False
-        
+
