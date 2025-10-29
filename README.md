@@ -58,7 +58,7 @@ pip install paramiko openpyxl
 2. Se conecta por SSH a cada dispositivo.
 3. Autentica y accede al modo `enable`.
 4. Extrae el `hostname` desde la configuración (`running-config`).
-5. Verifica la conectividad con el servidor TFTP (`10.243.0.220`).
+5. Verifica la conectividad con el servidor TFTP.
 6. Realiza el respaldo mediante TFTP y guarda el archivo en `/zte/{equipo}_{fecha}.dat`.
 7. Registra todas las operaciones y estados en consola y en el archivo `logs.txt`.
 
